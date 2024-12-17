@@ -10,79 +10,101 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Plus } from "lucide-react";
 import Image from "next/image";
-import CreateBannerDialog from "./CreateBannerDialog";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { ActionButtons } from "@/components/ui/action-buttons";
+import { StatusBadge } from "@/components/ui/status-badge";
+import CreateBannerDialog from "./CreateBannerDialog";
 import EditBannerDialog from "./EditBannerDialog";
+
+const ITEMS_PER_PAGE = 8;
 
 export default function BannersPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(banners.length / ITEMS_PER_PAGE);
+
+  // Get current page items
+  const getCurrentPageItems = () => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return banners.slice(startIndex, endIndex);
+  };
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
 
   useEffect(() => {
     fetchBanners();
   }, []);
 
   const fetchBanners = async () => {
+    setIsLoading(true);
     try {
-      console.log("Fetching banners...");
       const response = await fetch("/api/banners");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.success) {
+        setBanners(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+      setBanners([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/banners/${id}`, {
+        method: "DELETE",
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const text = await response.text();
-      console.log("Raw response:", text);
-
-      if (!text) {
-        console.log("Empty response received");
-        setBanners([]);
-        return;
-      }
-
-      try {
-        const data = JSON.parse(text);
-        console.log("Parsed data:", data);
-
-        if (data.success) {
-          setBanners(data.data || []);
-        } else {
-          console.error("API returned error:", data.error);
-          setBanners([]);
-        }
-      } catch (parseError) {
-        console.error("JSON parse error:", parseError);
-        setBanners([]);
+      const data = await response.json();
+      if (data.success) {
+        fetchBanners();
       }
     } catch (error) {
-      console.error("Error fetching banners:", error);
-      setBanners([]);
+      console.error("Error deleting banner:", error);
+      alert("Failed to delete banner");
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this banner?")) {
-      try {
-        const response = await fetch(`/api/banners/${id}`, {
-          method: "DELETE",
-        });
-        const data = await response.json();
-        if (data.success) {
-          fetchBanners();
-        }
-      } catch (error) {
-        console.error("Error deleting banner:", error);
-      }
-    }
-  };
-
-  const handleEdit = (banner: Banner) => {
-    setEditingBanner(banner);
-  };
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-10">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-10">
@@ -104,7 +126,7 @@ export default function BannersPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {banners.map((banner) => (
+          {getCurrentPageItems().map((banner) => (
             <TableRow key={banner.id}>
               <TableCell>
                 <Image
@@ -131,7 +153,7 @@ export default function BannersPage() {
               </TableCell>
               <TableCell>
                 <ActionButtons
-                  onEdit={() => handleEdit(banner)}
+                  onEdit={() => setEditingBanner(banner)}
                   onDelete={() => handleDelete(banner.id)}
                 />
               </TableCell>
@@ -139,6 +161,43 @@ export default function BannersPage() {
           ))}
         </TableBody>
       </Table>
+
+      {totalPages > 1 && (
+        <div className="mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                />
+              </PaginationItem>
+
+              {getPageNumbers().map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    isActive={currentPage === page}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
       <CreateBannerDialog
         open={isCreateDialogOpen}
