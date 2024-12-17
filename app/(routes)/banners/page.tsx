@@ -22,8 +22,8 @@ import { Plus } from "lucide-react";
 import Image from "next/image";
 import { ActionButtons } from "@/components/ui/action-buttons";
 import { StatusBadge } from "@/components/ui/status-badge";
-import CreateBannerDialog from "./CreateBannerDialog";
-import EditBannerDialog from "./EditBannerDialog";
+import CreateBannerDialog from "@/components/banners/CreateBannerDialog";
+import EditBannerDialog from "@/components/banners/EditBannerDialog";
 
 const ITEMS_PER_PAGE = 8;
 

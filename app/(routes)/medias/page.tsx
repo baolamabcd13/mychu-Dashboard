@@ -22,8 +22,8 @@ import { Plus } from "lucide-react";
 import Image from "next/image";
 import { ActionButtons } from "@/components/ui/action-buttons";
 import { StatusBadge } from "@/components/ui/status-badge";
-import CreateMediaDialog from "./CreateMediaDialog";
-import EditMediaDialog from "./EditMediaDialog";
+import CreateMediaDialog from "@/components/medias/CreateMediaDialog";
+import EditMediaDialog from "@/components/medias/EditMediaDialog";
 
 const ITEMS_PER_PAGE = 8;
 
