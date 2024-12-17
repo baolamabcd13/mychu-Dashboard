@@ -76,7 +76,7 @@ const Sidebar = () => {
                 }`}
             >
               <Newspaper className="mr-2 h-4 w-4" />
-              <Link href="/media" className="w-full">
+              <Link href="/medias" className="w-full">
                 Media
               </Link>
             </CommandItem>
